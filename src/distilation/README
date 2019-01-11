@@ -1,2 +1,1 @@
-student_lstm.py has the lstm only model
-student_rollout has the student teacher model
+A research porject to boost student performance using dropout
