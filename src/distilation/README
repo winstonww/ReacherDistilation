@@ -1,0 +1,2 @@
+student_lstm.py has the lstm only model
+student_rollout has the student teacher model
