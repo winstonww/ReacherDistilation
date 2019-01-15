@@ -140,6 +140,7 @@ def train(train, restore):
 
         while True:
 
+            # train using tensorflow's truncated propagation
             total_loss = 0 
             for (ob_batch_array, t_pdflat_batch_array, prev_pdflat_batch_array, prev_rew_batch_array ) in dataset.training_batches():
                 # minimize loss to train student
