@@ -24,7 +24,7 @@ def student_lstm_graph( ob_batch_ph, keep_prob_ph, prev_pdflat_batch_ph, initial
 
     ob_dropout_batch = tf.nn.dropout( ob_batch_ph, keep_prob_ph )
 
-    hid_prev_pdflat_batch = tf.layers.dense( ob_batch_ph, 32 )
+    hid_prev_pdflat_batch = tf.layers.dense( prev_pdflat_batch_ph, 32 )
 
     # combine the dropped out observation, previous reward and previous action to create a flat representing the input
     input_batch = tf.concat( [ ob_dropout_batch, hid_prev_pdflat_batch ], -1 )

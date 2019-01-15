@@ -83,8 +83,8 @@ def train(train, restore):
             tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope="LSTM") )
 
     # saver for restoring/saving depending on whether or not to train
-    #saver = tf.train.Saver(
-    #    var_list=tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='LSTM') )
+    saver = tf.train.Saver(
+        var_list=tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='LSTM') )
 
     train_writer = tf.summary.FileWriter( "/home/winstonww/reacher/data/viz/1" )
     train_writer.add_graph(sess.graph)
@@ -101,8 +101,8 @@ def train(train, restore):
         # run initializer for lstm variables
         if not restore:
             sess.run(init)
-        #elif glob.glob( lstm_trained_data_path + "*" ):
-        #    saver.restore( sess, lstm_trained_data_path )
+        elif glob.glob( lstm_trained_data_path + "*" ):
+            saver.restore( sess, lstm_trained_data_path )
         else:
             print( "attempt to restore trained data but {0} does not exist".format( lstm_trained_data_path ) )
 
@@ -112,90 +112,89 @@ def train(train, restore):
 
         reward = 0
 
-        if train: 
-            # in this loop we accumulate enough teacher data to get us started
-            print( "Begin Training! First Accumulate observation with teacher" )
+        # in this loop we accumulate enough teacher data to get us started
+        print( "Begin Training! First Accumulate observation with teacher" )
 
-            while dataset.num_episodes() <= LSTM_BATCH_SIZE*2:
+        while dataset.num_episodes() <= LSTM_BATCH_SIZE*2:
 
-                # accumulate observations and teacher action data
-                t_mean, t_pdflat  = sess.run(
-                        ( teacher.pi.pd.mean, teacher.pi.pd.flat ),
-                        feed_dict={ ob_ph: np.expand_dims(ob, axis=0 ) } )
+            # accumulate observations and teacher action data
+            t_mean, t_pdflat  = sess.run(
+                    ( teacher.pi.pd.mean, teacher.pi.pd.flat ),
+                    feed_dict={ ob_ph: np.expand_dims(ob, axis=0 ) } )
 
-                dataset.write(
-                    ob=ob,
-                    reward=reward,
-                    t_pdflat=t_pdflat,
-                    s_pdflat=np.zeros([PDFLAT_SHAPE]),
-                    stepped_with='t')
-
-
-                ob, reward, new, _ = env.step( t_mean )
-
-                if new:
-                    ob = env.reset()
-                    dataset.flush()
-
-            print( "Accumulated sufficient data points from teacher. now train" )
-
-            while True:
-
-                total_loss = 0 
-                for (ob_batch_array, t_pdflat_batch_array, prev_pdflat_batch_array, prev_rew_batch_array ) in dataset.training_batches():
-                    # minimize loss to train student
-                    l,  _ = sess.run(
-                            [ loss,  minimize_adam ], 
-                            feed_dict = {
-                                keep_prob_ph: KEEP_PROB,
-                                ob_batch_ph: ob_batch_array,
-                                # TODO: revert this back
-                                prev_pdflat_batch_ph: prev_pdflat_batch_array,
-                                #prev_rew_batch_ph: prev_rew_batch_array,
-                                #prev_pdflat_batch_ph: ob_batch_array,
-                                #prev_pdflat_batch_ph: np.random.rand(STEPS_UNROLLED, LSTM_BATCH_SIZE, PDFLAT_SHAPE),
-                                #prev_pdflat_batch_ph: np.zeros([STEPS_UNROLLED, LSTM_BATCH_SIZE, PDFLAT_SHAPE]),
-                                t_pdflat_batch_ph: t_pdflat_batch_array,
-                                initial_state_batch_ph: zero_state_batch } )
-                    total_loss += l
-
-                # Get Teacher action for the last observation
-                t_pdflat  = sess.run(
-                        ( teacher.pi.pd.flat ), 
-                        feed_dict={ ob_ph: np.expand_dims( ob, axis=0 ) } )
+            dataset.write(
+                ob=ob,
+                reward=reward,
+                t_pdflat=t_pdflat,
+                s_pdflat=np.zeros([PDFLAT_SHAPE]),
+                stepped_with='t')
 
 
-                ob_batch_array, prev_pdflat_batch_array, prev_rew_batch_array = dataset.test_batch(ob)
-                
-                # Get student action for the last ovservation
-                s_ac, s_pdflat, curr_state_batch  = sess.run(
-                        ( s_action, s_pdflat_slice, final_state_batch ), 
+            ob, reward, new, _ = env.step( t_mean )
+
+            if new:
+                ob = env.reset()
+                dataset.flush()
+
+        print( "Accumulated sufficient data points from teacher. now train" )
+
+        while True:
+
+            total_loss = 0 
+            for (ob_batch_array, t_pdflat_batch_array, prev_pdflat_batch_array, prev_rew_batch_array ) in dataset.training_batches():
+                # minimize loss to train student
+                l,  _ = sess.run(
+                        [ loss,  minimize_adam ], 
                         feed_dict = {
-                            keep_prob_ph: 1,
+                            keep_prob_ph: KEEP_PROB,
                             ob_batch_ph: ob_batch_array,
-                            #TODO: revert this back
+                            # TODO: revert this back
                             prev_pdflat_batch_ph: prev_pdflat_batch_array,
                             #prev_rew_batch_ph: prev_rew_batch_array,
                             #prev_pdflat_batch_ph: ob_batch_array,
                             #prev_pdflat_batch_ph: np.random.rand(STEPS_UNROLLED, LSTM_BATCH_SIZE, PDFLAT_SHAPE),
                             #prev_pdflat_batch_ph: np.zeros([STEPS_UNROLLED, LSTM_BATCH_SIZE, PDFLAT_SHAPE]),
-                            initial_state_batch_ph: curr_state_batch } )
+                            t_pdflat_batch_ph: t_pdflat_batch_array,
+                            initial_state_batch_ph: zero_state_batch } )
+                total_loss += l
 
-                dataset.write(
-                    ob=ob,
-                    reward=reward,
-                    t_pdflat=t_pdflat,
-                    s_pdflat=s_pdflat,
-                    stepped_with='s')
+            # Get Teacher action for the last observation
+            t_pdflat  = sess.run(
+                    ( teacher.pi.pd.flat ), 
+                    feed_dict={ ob_ph: np.expand_dims( ob, axis=0 ) } )
+
+
+            ob_batch_array, prev_pdflat_batch_array, prev_rew_batch_array = dataset.test_batch(ob)
+                
+            # Get student action for the last ovservation
+            s_ac, s_pdflat, curr_state_batch  = sess.run(
+                    ( s_action, s_pdflat_slice, final_state_batch ), 
+                    feed_dict = {
+                        keep_prob_ph: 1,
+                        ob_batch_ph: ob_batch_array,
+                        #TODO: revert this back
+                        prev_pdflat_batch_ph: prev_pdflat_batch_array,
+                        #prev_rew_batch_ph: prev_rew_batch_array,
+                        #prev_pdflat_batch_ph: ob_batch_array,
+                        #prev_pdflat_batch_ph: np.random.rand(STEPS_UNROLLED, LSTM_BATCH_SIZE, PDFLAT_SHAPE),
+                        #prev_pdflat_batch_ph: np.zeros([STEPS_UNROLLED, LSTM_BATCH_SIZE, PDFLAT_SHAPE]),
+                        initial_state_batch_ph: curr_state_batch } )
+
+            dataset.write(
+                ob=ob,
+                reward=reward,
+                t_pdflat=t_pdflat,
+                s_pdflat=s_pdflat,
+                stepped_with='s')
                         
-                # step with student
-                ob, reward, new, _ = env.step( s_ac )
+            # step with student
+            ob, reward, new, _ = env.step( s_ac )
 
-                if new:
-                    print ( "************** Episode {0} ****************".format(dataset.num_episodes()) )
-                    ob = env.reset()
-                    print("recent loss: %f " % total_loss )
-                    dataset.flush()
-                    #save_path = saver.save(sess, lstm_trained_data_path )
-                    if dataset.num_episodes() % MAX_CAPACITY == 0: dataset.dump()
-                    if dataset.num_episodes() == TOTAL_EPISODES: break
+            if new:
+                print ( "************** Episode {0} ****************".format(dataset.num_episodes()) )
+                ob = env.reset()
+                print("recent loss: %f " % total_loss )
+                dataset.flush()
+                save_path = saver.save(sess, lstm_trained_data_path )
+                if dataset.num_episodes() % MAX_CAPACITY == 0: dataset.dump()
+                if dataset.num_episodes() == TOTAL_EPISODES: break

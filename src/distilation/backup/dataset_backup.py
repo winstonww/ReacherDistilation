@@ -149,10 +149,11 @@ class Dataset(object):
         self.num_total_episodes += 1
 
     # For teacher foring
-    def pdflat_at(self, episode, timestep ):
+    def pdflat_at(self, episode, timestep, use_student=False):
         # set action to zero
         if timestep < 0: return np.zeros([PDFLAT_SHAPE])
-        return episode[timestep]['t'] 
+        if not use_student:
+            return episode[timestep]['t'] 
         #if episode[timestep]['with'] == 't':
         #    return episode[timestep]['t'] 
         #return episode[timestep]['s']
@@ -241,13 +242,6 @@ class Dataset(object):
         ob_batch_array[:,LSTM_BATCH_SIZE-1,:] = np.array(curr_episode_obs)
         return ob_batch_array
 
-    def s_pdflat_at(self, episode, timestep ):
-        # set action to zero
-        if timestep < 0: return np.zeros([PDFLAT_SHAPE])
-        if episode[timestep]['with'] == 't':
-            return episode[timestep]['t'] 
-        return episode[timestep]['s']
-
     def prev_pdflat_batch_array(self):
         prev_pdflat_array = np.zeros([ STEPS_UNROLLED, LSTM_BATCH_SIZE, PDFLAT_SHAPE ] )
         prev_pdflats = list()
@@ -258,13 +252,8 @@ class Dataset(object):
             prev_pdflats.extend( [ np.zeros([PDFLAT_SHAPE]) for i in range(0-start) ] )
             start = 0
 
-        # prev_pdflats.extend(self._serialize("prev",
-        #        self.curr_episode, start, len(self.curr_episode)) )
-
-        # a temporary hack to feed prev student
-        #for i in range(start, len(self.curr_episode ), 1 ):
-        #    pdflat = self.s_pdflat_at( self.curr_episode, i-1 )
-        #    prev_pdflats.append( pdflat )
+        prev_pdflats.extend(self._serialize("prev",
+                self.curr_episode, start, len(self.curr_episode)) )
 
         prev_pdflats.append( self.pdflat_at(self.curr_episode, self.last_step()) )
 

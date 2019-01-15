@@ -36,10 +36,37 @@ def train(env_id, num_timesteps, seed):
         )
     env.close()
 
+def collect_reward():
+    env = make_mujoco_env("Reacher-v2", 0)
+    sess = tf.Session()
+    teacher = TeaherAgent(env,sess,restore=True)
+    dataset = Dataset(dir_path="/home/winstonww/reacher/data/dataset_teacher/")
+    ob = env.reset()
+    while True:
+        # Get Teacher action for the last observation
+        t_mean  = sess.run(
+            ( teacher.pi.pd.mean ), 
+            feed_dict={ ob_ph: np.expand_dims( ob, axis=0 ) } )
+
+
+        dataset.write(
+            ob=ob,
+            reward=reward,
+            t_pdflat=t_pdflat,
+            s_pdflat=np.zeros([PDFLAT_SHAPE]),
+            stepped_with='t')
+
+        ob, reward, new, _ = env.step( t_mean )
+
+
+        if new:
+            ob = env.reset()
+            dataset.flush()
+
 def main():
     args = mujoco_arg_parser().parse_args()
     logger.configure()
-    train(args.env, num_timesteps=args.num_timesteps, seed=args.seed)
+    #train(args.env, num_timesteps=args.num_timesteps, seed=args.seed)
 
 if __name__ == '__main__':
     main()

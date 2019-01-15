@@ -20,29 +20,29 @@ class ExtractReward(object):
         return re
 
     @classmethod
-    def get_return(cls, data_in_memory):
+    def get_return(cls, dataset):
         ret = []
-        for i in range(len(data_in_memory)):
-            ret.append( sum( cls.get_episode_reward(data_in_memory[i]) ) )
+        pages = dataset.pages()
+        for i in range(len(pages)):
+            dataset.switch(pages[i])
+            data = dataset.data_in_memory
+            for i in range(len(data)):
+                ret.append( sum( cls.get_episode_reward(data[i]) ) )
         return ret
 
     @classmethod
-    def get_avg_return(cls, data_in_memory, per_episodes):
+    def get_avg_return(cls, dataset, per_episodes):
         avg_ret = []
-        ret = cls.get_return(data_in_memory)
-        aret, i = 0, 0
-        while i < len(ret):
-            aret += ret[i]
-            i += 1
-            if i % per_episodes == 0:
-                avg_ret.append( aret/ per_episodes )
-                aret = 0
+        ret = cls.get_return(dataset)
+        for i in range(0, len(ret), per_episodes):
+            end = min( i+per_episodes, len(ret) )
+            avg_ret.append( sum( ret[i:end] ) / len( ret[i:end] ) )
         return avg_ret
     
     @classmethod
-    def get_avg_reward(cls, data_in_memory, per_episodes):
+    def get_avg_reward(cls, dataset, per_episodes):
         avg_rew = []
-        avg_ret = cls.get_avg_return(data_in_memory, per_episodes)
+        avg_ret = cls.get_avg_return( dataset, per_episodes)
         for i in range(len(avg_ret)):
             avg_rew.append( avg_ret[i] / EPISODE_STEPS )
         return avg_rew
@@ -166,36 +166,88 @@ path = "/home/winstonww/reacher/data/20190110/050910/lstm/dataset_kp_1"
 
 #1.0 prev=prev
 path = "/home/winstonww/reacher/data/20190110/054500/lstm/dataset_kp_1"
+rets_path = "/home/winstonww/reacher/data/kp1.0"
 
 #YAYYYYYYYYYYY!!!!!YASSSSS!!!!!!
 #0.85 prev=prev
 path = "/home/winstonww/reacher/data/20190110/170351/lstm/dataset_kp_0.85"
+rets_path = "/home/winstonww/reacher/data/kp0.85"
 
 # try 0.75 prev-prev
-path = "/home/winstonww/reacher/data/20190110/215203/lstm/dataset_kp_0.75"
+#path = "/home/winstonww/reacher/data/20190110/215203/lstm/dataset_kp_0.75"
+#rets_path = "/home/winstonww/reacher/data/kp0.75"
 
 # 0.5
-path = "/home/winstonww/reacher/data/20190110/225036/lstm/dataset_kp_0.5"
-dataset = Dataset(path)
-pages = dataset.pages()
-#for i in range(20,len(pages),1):
-rets = []
-ret = []
-window = 10
-for i in range(0,len(pages),1):
+#path = "/home/winstonww/reacher/data/20190110/225036/lstm/dataset_kp_0.5"
+#rets_path = "/home/winstonww/reacher/data/kp0.5"
 
-    dataset.switch(pages[i])
-    #print(ExtractReward.get_return(dataset.data_in_memory))
-    #print(ExtractReward.get_avg_reward(dataset.data_in_memory, 10))
-    if len(ret) < window:
-        r = ExtractReward.get_avg_reward(dataset.data_in_memory, 10)
-        ret.extend(r)
-    else:
-        rets.append(sum(ret)/ (window) )
-        ret = []
+#0.0
+#path = "/home/winstonww/reacher/data/20190110/230709/lstm/dataset_kp_0.0"
+#rets_path = "/home/winstonww/reacher/data/kp0.0"
 
-print(rets)
-rets_path = "/home/winstonww/reacher/data/rets"
-#np.save(rets_path, rets) 
-print(len(dataset.data_in_memory))
-#print(json.dumps(dataset.data_in_memory[-1], indent=4, sort_keys=True))
+#0.2
+#path = "/home/winstonww/reacher/data/20190113/195908/lstm/dataset_kp_0.2"
+#rets_path = "/home/winstonww/reacher/data/kp0.2"
+
+
+##################################OOPS######################################
+
+#0.85
+
+files = [
+    ("/home/winstonww/reacher/data/20190113/203457/lstm/dataset_kp_0.85",
+     "/home/winstonww/reacher/data/kp0.85" ),
+
+#0.75
+    ( "/home/winstonww/reacher/data/20190113/204535/lstm/dataset_kp_0.75",
+    "/home/winstonww/reacher/data/kp0.75"),
+
+#0.5
+    ("/home/winstonww/reacher/data/20190113/204429/lstm/dataset_kp_0.5/",
+     "/home/winstonww/reacher/data/kp0.5"),
+
+#0.2
+    ("/home/winstonww/reacher/data/20190114/051054/lstm/dataset_kp_0.2",
+    "/home/winstonww/reacher/data/kp0.2"),
+
+#0.1
+    ("/home/winstonww/reacher/data/20190114/052659/lstm/dataset_kp_0.1",
+    "/home/winstonww/reacher/data/kp0.1"),
+
+#0.05 
+    ("/home/winstonww/reacher/data/20190114/053052/lstm/dataset_kp_0.05",
+    "/home/winstonww/reacher/data/kp0.05"),
+
+#0.0
+    ("/home/winstonww/reacher/data/20190114/052810/lstm/dataset_kp_0.0",
+     "/home/winstonww/reacher/data/kp0.0"),
+
+#1.0
+    ("home/winstonww/reacher/data/20190114/054249/lstm/dataset_kp_1.0",
+    "/home/winstonww/reacher/data/kp1.0"),
+]
+
+files = [
+        #1.0
+    ("/home/winstonww/reacher/data/20190114/054249/lstm/dataset_kp_1.0",
+    "/home/winstonww/reacher/data/kp1.0"),
+]
+
+#step with student 0.75 kp
+files = [
+  ("/home/winstonww/reacher/data/20190114/055010/lstm/dataset_kp_0.75",
+    "/home/winstonww/reacher/data/kp0.75s"),
+  ]
+
+files = [
+        ("/home/winstonww/reacher/data/20190114/192136/lstm/dataset_kp_0.5",
+        "/home/winstonww/reacher/data/kp0.5ss"),
+    ]
+
+for (path, rews_path) in files:
+    dataset = Dataset(path)
+    avg_rews = ExtractReward.get_avg_reward(dataset, 50)
+    print(avg_rews)
+    np.save(rews_path, avg_rews) 
+    print("file written to {0}.npy, avg_rews array length is {1}".format(rews_path, len(avg_rews)))
+    #print(json.dumps(dataset.data_in_memory[-1], indent=4, sort_keys=True))
