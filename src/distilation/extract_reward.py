@@ -227,26 +227,26 @@ files = [
     "/home/winstonww/reacher/data/kp1.0"),
 ]
 
-files = [
-        #1.0
-    ("/home/winstonww/reacher/data/20190114/054249/lstm/dataset_kp_1.0",
-    "/home/winstonww/reacher/data/kp1.0"),
-]
+#files = [
+#        #1.0
+#    ("/home/winstonww/reacher/data/20190114/054249/lstm/dataset_kp_1.0",
+#    "/home/winstonww/reacher/data/kp1.0"),
+#]
 
 #step with student 0.75 kp
-files = [
-  ("/home/winstonww/reacher/data/20190114/055010/lstm/dataset_kp_0.75",
-    "/home/winstonww/reacher/data/kp0.75s"),
-  ]
+#files = [
+#  ("/home/winstonww/reacher/data/20190114/055010/lstm/dataset_kp_0.75",
+#    "/home/winstonww/reacher/data/kp0.75s"),
+#  ]
 
-files = [
-        ("/home/winstonww/reacher/data/20190114/192136/lstm/dataset_kp_0.5",
-        "/home/winstonww/reacher/data/kp0.5ss"),
-    ]
+#files = [
+#        ("/home/winstonww/reacher/data/20190114/192136/lstm/dataset_kp_0.5",
+#        "/home/winstonww/reacher/data/kp0.5ss"),
+#    ]
 
 for (path, rews_path) in files:
     dataset = Dataset(path)
-    avg_rews = ExtractReward.get_avg_reward(dataset, 50)
+    avg_rews = ExtractReward.get_avg_reward(dataset, 5)
     print(avg_rews)
     np.save(rews_path, avg_rews) 
     print("file written to {0}.npy, avg_rews array length is {1}".format(rews_path, len(avg_rews)))
