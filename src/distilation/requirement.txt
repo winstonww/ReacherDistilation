@@ -23,7 +23,7 @@ imageio==2.3.0
 ipython==6.5.0
 ipython-genutils==0.2.0
 jedi==0.12.1
-joblib==0.12.2
+joblib==1.2.0
 json-tricks==3.12.2
 kiwisolver==1.0.1
 lockfile==0.12.2
